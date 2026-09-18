@@ -43,7 +43,11 @@ jobs:
       - name: Race detection
         run: go test -race ./...
       - name: Build without CGO
-        run: CGO_ENABLED=0 go build -trimpath -o bin/pbotd ./cmd/pbotd
+        run: |
+          CGO_ENABLED=0 go build -trimpath \
+            -ldflags "-X github.com/decfrr/pbotd/internal/cli.Version=git-${GITHUB_SHA::12}" \
+            -o bin/pbotd ./cmd/pbotd
+          test "$(bin/pbotd --version)" = "pbotd git-${GITHUB_SHA::12}"
       - name: Installer checks
         run: sh tests/install.sh
       - name: Package release binary
@@ -62,3 +66,65 @@ jobs:
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
+  release:
+    name: Publish latest release
+    if: github.ref == 'refs/heads/releases' && github.event_name == 'push'
+    needs: [lint, test]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    concurrency:
+      group: publish-latest
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: pbotd-linux-*
+          merge-multiple: true
+          path: dist
+      - name: Publish binaries and checksums
+        working-directory: dist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          branch_sha=$(gh api "repos/$GH_REPO/git/ref/heads/releases" --jq '.object.sha')
+          if [ "$branch_sha" != "$GITHUB_SHA" ]; then
+            echo 'A newer commit is on releases; skipping this publication.'
+            exit 0
+          fi
+
+          sha256sum pbotd-linux-amd64.tar.gz pbotd-linux-arm64.tar.gz > SHA256SUMS
+          cat > "$RUNNER_TEMP/release-notes.md" <<EOF
+          Latest successful build of the releases branch.
+
+          Source: [$GITHUB_SHA]($GITHUB_SERVER_URL/$GH_REPO/commit/$GITHUB_SHA)
+          Version: git-${GITHUB_SHA::12}
+
+          Static Linux binaries for amd64 (x86-64) and arm64 (AArch64), also usable in WSL2.
+          Download the archive for your CPU and SHA256SUMS; verify it with
+          \`sha256sum --check --ignore-missing SHA256SUMS\`, then extract the archive.
+          Go is not required to run the binary.
+
+          This rolling release and its latest tag are updated after both architectures pass CI.
+          EOF
+
+          tag_sha=$(gh api "repos/$GH_REPO/git/matching-refs/tags/latest" \
+            --jq '.[] | select(.ref == "refs/tags/latest") | .object.sha')
+          if [ -n "$tag_sha" ]; then
+            gh api --method PATCH "repos/$GH_REPO/git/refs/tags/latest" \
+              -f sha="$GITHUB_SHA" -F force=true
+          else
+            gh api --method POST "repos/$GH_REPO/git/refs" \
+              -f ref=refs/tags/latest -f sha="$GITHUB_SHA"
+          fi
+
+          if gh release view latest >/dev/null 2>&1; then
+            gh release upload latest pbotd-linux-*.tar.gz SHA256SUMS --clobber
+            gh release edit latest --title 'Latest releases build' --latest \
+              --notes-file "$RUNNER_TEMP/release-notes.md"
+          else
+            gh release create latest pbotd-linux-*.tar.gz SHA256SUMS \
+              --verify-tag --title 'Latest releases build' --latest \
+              --notes-file "$RUNNER_TEMP/release-notes.md"
+          fi

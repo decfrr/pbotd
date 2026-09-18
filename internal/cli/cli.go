@@ -19,7 +19,8 @@ import (
 	"github.com/decfrr/pbotd/internal/pbs"
 )
 
-const Version = "0.1.0-dev"
+// Version can be set by release builds with -ldflags -X.
+var Version = "0.1.0-dev"
 
 var help = map[string]string{
 	"pbotd":    "pbotd daemon [--foreground]\npbotd status [--json]\npbotd doctor [--json]\npbotd <PBS-command> [arguments]\nPBS commands: qsub qstat qdel qhold qrls qalter qrerun pbsnodes\n",

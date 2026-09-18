@@ -41,6 +41,25 @@ pbotd のインストーラーは GPU ドライバーの導入やデバイス権
 
 以下は、Linux または WSL2 内の端末で、利用する一般ユーザーとして実行します。
 
+### ビルド済みバイナリを使う場合（Go 不要）
+
+[GitHub Releases](https://github.com/decfrr/pbotd/releases/latest) から、CPU に合う `pbotd-linux-amd64.tar.gz`（x86-64）または `pbotd-linux-arm64.tar.gz`（AArch64）と、`SHA256SUMS` を空のディレクトリにダウンロードしてください。
+
+```sh
+sha256sum --check --ignore-missing SHA256SUMS
+tar -xzf pbotd-linux-amd64.tar.gz   # ARM64 では pbotd-linux-arm64.tar.gz
+mkdir -p "$HOME/.local/bin"
+install -m 755 pbotd "$HOME/.local/bin/pbotd"
+export PATH="$HOME/.local/bin:$PATH"
+pbotd --version
+```
+
+この方法では `pbotd` のみを配置します。`pbotd qsub`、`pbotd qstat` のように実行してください。更新後はデーモンを再起動してください。バイナリのバージョン表示は `git-<コミット>` です。
+
+`releases` ブランチへ push すると、両アーキテクチャのテストなどが成功した後に、`latest` リリース・タグ・配布ファイルを自動更新します。ビルドに失敗した場合は前回のリリースを利用できます。
+
+### ソースからインストールする場合
+
 ```sh
 go version  # Go 1.27 以上を確認
 

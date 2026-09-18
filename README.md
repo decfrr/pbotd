@@ -11,7 +11,24 @@
 
 Supports durable queues, daemon restart recovery, arrays, `afterok` dependencies, hold/release, alteration, cancellation, walltime, and running-job reruns. This is a practical PBS subset, not a PBS server replacement.
 
-## Build and install
+## Download a binary
+
+[GitHub Releases](https://github.com/decfrr/pbotd/releases/latest) provides static Linux binaries for **amd64 (x86-64)** and **arm64 (AArch64)**, including WSL2. Go is not required on the target machine. Download `pbotd-linux-amd64.tar.gz` or `pbotd-linux-arm64.tar.gz` and `SHA256SUMS` into an empty directory, then run:
+
+```sh
+sha256sum --check --ignore-missing SHA256SUMS
+tar -xzf pbotd-linux-amd64.tar.gz   # use pbotd-linux-arm64.tar.gz for ARM64
+mkdir -p "$HOME/.local/bin"
+install -m 755 pbotd "$HOME/.local/bin/pbotd"
+export PATH="$HOME/.local/bin:$PATH"
+pbotd --version
+```
+
+This installs `pbotd`; use commands such as `pbotd qsub` and `pbotd qstat`. Restart the daemon after upgrading. The release binary reports `git-<commit>` as its version.
+
+Every push to the `releases` branch runs lint, unit/integration tests, race detection, and installer checks on native Linux amd64 and arm64 runners. After all checks pass, Actions updates the rolling `latest` release and tag, replacing both archives and their checksums. Promote changes with `git switch releases`, `git merge main`, and `git push origin releases`. Failed builds leave the previous release available; rerun a failed workflow from the Actions page after resolving any transient failure. Publication uses the built-in `GITHUB_TOKEN` and requires no additional secrets. Keep release immutability disabled for this rolling release.
+
+## Build and install from source
 
 Requires Linux/WSL, Bash, and Go 1.27 or newer. NVIDIA hardware is optional for CPU jobs.
 
