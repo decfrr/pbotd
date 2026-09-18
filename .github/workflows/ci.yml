@@ -22,8 +22,16 @@ jobs:
       - name: Go vet
         run: go vet ./...
   test:
-    name: Test and build
-    runs-on: ubuntu-latest
+    name: Test and build (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -38,3 +46,19 @@ jobs:
         run: CGO_ENABLED=0 go build -trimpath -o bin/pbotd ./cmd/pbotd
       - name: Installer checks
         run: sh tests/install.sh
+      - name: Package release binary
+        if: github.ref == 'refs/heads/releases' && github.event_name == 'push'
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          bin/pbotd --version
+          mkdir -p dist
+          tar -czf "dist/pbotd-linux-${ARCH}.tar.gz" -C bin pbotd
+      - uses: actions/upload-artifact@v7
+        if: github.ref == 'refs/heads/releases' && github.event_name == 'push'
+        with:
+          name: pbotd-linux-${{ matrix.arch }}
+          path: dist/*.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
