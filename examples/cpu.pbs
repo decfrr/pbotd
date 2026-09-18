@@ -1,0 +1,9 @@
+#!/bin/bash
+#PBS -N hello
+#PBS -q cpu
+#PBS -l select=1:ncpus=1:mem=128mb
+#PBS -l walltime=00:01:00
+#PBS -j oe
+set -eu
+printf 'job=%s host=%s cwd=%s\n' "$PBS_JOBID" "$(hostname)" "$PWD"
+printf 'cpus=%s visible_gpus=%s\n' "$PBS_NCPUS" "$CUDA_VISIBLE_DEVICES"

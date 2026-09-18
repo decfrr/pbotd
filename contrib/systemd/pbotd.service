@@ -1,0 +1,15 @@
+[Unit]
+Description=PBS On The Desktop scheduler
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/pbotd daemon --foreground
+Restart=on-failure
+RestartSec=2s
+# Runners and workloads deliberately survive daemon stop/restart.
+KillMode=process
+TimeoutStopSec=15s
+UMask=0077
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,8 @@
+#!/bin/bash
+#PBS -N sweep
+#PBS -J 0-5%2
+#PBS -l ncpus=1,mem=128mb,walltime=60
+#PBS -o logs/sweep.out
+#PBS -j oe
+set -eu
+printf 'job=%s index=%s attempt=%s\n' "$PBS_JOBID" "$PBS_ARRAY_INDEX" "$PBOTD_ATTEMPT_ID"

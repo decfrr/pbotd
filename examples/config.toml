@@ -1,0 +1,36 @@
+[scheduler]
+policy = "backfill"
+tick = "1s"
+reservation_after = "2h"
+
+[resources]
+cpus = "auto"
+memory = "auto"
+memory_reserve = "2GiB"
+
+[defaults]
+ncpus = 1
+mem = "1GiB"
+walltime = "unlimited"
+
+[gpu]
+provider = "nvidia-smi"
+foreign_process_policy = "avoid"
+allow_uuids = []
+deny_uuids = []
+static_uuids = []
+refresh = "5s"
+probe_timeout = "2s"
+# command = "/usr/lib/wsl/lib/nvidia-smi"
+
+[execution]
+shell = "/bin/bash"
+term_grace = "10s"
+cgroup = "off" # off, auto (fall back with a warning), or required
+cgroup_base = "" # preconfigured delegated cgroup v2 subtree
+cpu_affinity = false
+completion_hook = [] # e.g. ["/absolute/path/on-completion", "literal argument"]
+hook_timeout = "10s"
+
+[daemon]
+autostart = true
